@@ -13,7 +13,7 @@ var a server.App
 func TestMain(m *testing.M) {
 	a.Initialize(
 		os.Getenv("APP_DB_USERNAME"),
-		os.Getenv("App_DB_PASSWORD"),
+		os.Getenv("APP_DB_PASSWORD"),
 		os.Getenv("APP_DB_NAME"))
 
 	ensureTableExists()
@@ -34,11 +34,10 @@ func clearTable() {
 }
 
 const tableCreationQuery = `
-CREATE TABLE IF NOT EXISTS products
-(
+CREATE TABLE IF NOT EXISTS products (
 	id SERIAL,
 	name TEXT NOT NULL,
 	price NUMERIC(10,2) NOT NULL DEFAULT 0.00,
-	CONSTRAIN products_pkey PRIMARY KEY (id)
+	CONSTRAINT products_pkey PRIMARY KEY (id)
 )
 `
