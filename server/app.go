@@ -30,18 +30,6 @@ func respondWithError(w http.ResponseWriter, code int, message string) {
 	respondWithJSON(w, code, map[string]string{"error": message})
 }
 
-func (a *App) Initialize(user, password, dbname string) {
-	connectionString := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable", user, password, dbname)
-
-	var err error
-	a.DB, err = sql.Open("postgres", connectionString)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	a.Router = mux.NewRouter()
-}
-
 func (a *App) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	var p models.Product
 	decoder := json.NewDecoder(r.Body)
@@ -71,7 +59,7 @@ func (a *App) GetProduct(w http.ResponseWriter, r *http.Request) {
 	if err := p.GetProduct(a.DB); err != nil {
 		switch err {
 		case sql.ErrNoRows:
-			respondWithError(w, http.StatusBadRequest, "Product not found")
+			respondWithError(w, http.StatusNotFound, "Product not found")
 		default:
 			respondWithError(w, http.StatusBadRequest, err.Error())
 		}
@@ -132,4 +120,44 @@ func (a *App) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, p)
 }
 
-func (a *App) Run(addr string) {}
+func (a *App) DeleteProduct(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid Product ID")
+		return
+	}
+
+	p := models.Product{ID: id}
+	if err := p.DeleteProduct(a.DB); err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, map[string]string{"result": "success"})
+}
+
+func (a *App) InitializeRoutes() {
+	a.Router.HandleFunc("/products", a.GetProducts).Methods("GET")
+	a.Router.HandleFunc("/product", a.CreateProduct).Methods("POST")
+	a.Router.HandleFunc("/products/{id:[0-9]+}", a.GetProduct).Methods("GET")
+	a.Router.HandleFunc("/products/{id:[0-9]+}", a.UpdateProduct).Methods("PUT")
+	a.Router.HandleFunc("/products/{id:[0-9]+}", a.DeleteProduct).Methods("DELETE")
+}
+
+func (a *App) Initialize(user, password, dbname string) {
+	connectionString := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable", user, password, dbname)
+
+	var err error
+	a.DB, err = sql.Open("postgres", connectionString)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	a.Router = mux.NewRouter()
+	a.InitializeRoutes()
+}
+
+func (a *App) Run(addr string) {
+	log.Fatal(http.ListenAndServe(":8010", a.Router))
+}
