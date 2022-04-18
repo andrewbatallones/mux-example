@@ -80,14 +80,14 @@ func TestEmptyTable(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	if body := response.Body.String(); body != "[]" {
-		t.Errorf("Expected an emkpty array. Got %s", body)
+		t.Errorf("Expected an empty array. Got %s", body)
 	}
 }
 
 func TestGetNonExistentProduct(t *testing.T) {
 	clearTable()
 
-	req, _ := http.NewRequest("GET", "/product/11", nil)
+	req, _ := http.NewRequest("GET", "/products/11", nil)
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusNotFound, response.Code)
@@ -102,8 +102,8 @@ func TestGetNonExistentProduct(t *testing.T) {
 func TestCreateProduct(t *testing.T) {
 	clearTable()
 
-	var jsonStr = []byte(`{"name": "test proudct", "price": 11.22}`)
-	req, _ := http.NewRequest("POST", "/products", bytes.NewBuffer(jsonStr))
+	var jsonStr = []byte(`{"name": "test product", "price": 11.22}`)
+	req, _ := http.NewRequest("POST", "/product", bytes.NewBuffer(jsonStr))
 	req.Header.Set("Content-Type", "application/json")
 
 	response := executeRequest(req)
@@ -146,7 +146,7 @@ func TestUpdateProduct(t *testing.T) {
 	json.Unmarshal(response.Body.Bytes(), &originalProduct)
 
 	var jsonStr = []byte(`{"name": "test product - updated name", "price": 11.22}`)
-	req, _ = http.NewRequest("PUT", "product/1", bytes.NewBuffer(jsonStr))
+	req, _ = http.NewRequest("PUT", "/products/1", bytes.NewBuffer(jsonStr))
 	req.Header.Set("Content-Type", "application/json")
 	response = executeRequest(req)
 
@@ -172,16 +172,16 @@ func TestDeleteProduct(t *testing.T) {
 	clearTable()
 	addProducts(1)
 
-	req, _ := http.NewRequest("GET", "/product/1", nil)
+	req, _ := http.NewRequest("GET", "/products/1", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	req, _ = http.NewRequest("DELETE", "/product/1", nil)
+	req, _ = http.NewRequest("DELETE", "/products/1", nil)
 	response = executeRequest(req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	req, _ = http.NewRequest("GET", "/product/1", nil)
+	req, _ = http.NewRequest("GET", "/products/1", nil)
 	response = executeRequest(req)
 	checkResponseCode(t, http.StatusNotFound, response.Code)
 }
